@@ -299,164 +299,274 @@ Cari
 
 <section class="content-card">
 
-<div class="section-header">
+    <!-- HEADER SECTION -->
+    <div class="section-header">
 
-<div>
+        <div>
+            <h3 class="fw-bold mb-1">
+                <i class="bi bi-book text-primary me-2"></i>
+                Koleksi Buku Terbaru
+            </h3>
 
-<h3 class="fw-bold mb-1">
-<i class="bi bi-book text-primary me-2"></i>
-Koleksi Buku Terbaru
-</h3>
+            <small class="text-muted">
+                <?= $total_buku ?> koleksi buku
+            </small>
+        </div>
 
-<small class="text-muted">
-<?= $total_buku ?> koleksi buku tersedia
-</small>
+        <a href="katalog.php" class="btn btn-outline-primary btn-all">
+            Lihat Semua
+            <i class="bi bi-arrow-right ms-1"></i>
+        </a>
 
-</div>
+    </div>
 
-<a href="katalog.php" class="btn btn-outline-primary btn-all">
 
-Lihat Semua
+    <!-- DAFTAR BUKU -->
+    <div class="row g-4">
 
-<i class="bi bi-arrow-right ms-1"></i>
+        <?php while($buku = mysqli_fetch_assoc($hasil_buku)): ?>
 
-</a>
+            <div class="col-md-6 col-lg-3">
 
-</div>
+                <div class="card card-book h-100 shadow-sm">
 
-<div class="row g-4">
+                    <!-- ICON BUKU -->
+                    <div class="book-icon">
+                        <i class="bi bi-book-fill display-5 text-primary"></i>
+                    </div>
 
-<?php while($buku=mysqli_fetch_assoc($hasil_buku)): ?>
 
-<div class="col-md-6 col-lg-3">
+                    <!-- CARD BODY -->
+                    <div class="card-body d-flex flex-column">
 
-<div class="card card-book h-100 shadow-sm">
+                        <!-- LABEL -->
+                        <span class="badge bg-primary-subtle text-primary mb-2">
+                            Buku
+                        </span>
 
-<div class="book-icon">
 
-<i class="bi bi-book-fill display-5 text-primary"></i>
+                        <!-- JUDUL BUKU -->
+                        <h6 class="fw-bold" style="min-height:48px;">
+                            <?= htmlspecialchars($buku['judul_buku'] ?? '-'); ?>
+                        </h6>
 
-</div>
 
-<div class="card-body d-flex flex-column">
+                        <!-- PENULIS -->
+                        <p class="small text-muted mb-1">
+                            <i class="bi bi-person me-1"></i>
+                            <?= htmlspecialchars($buku['penulis'] ?? '-'); ?>
+                        </p>
 
-    <span class="badge bg-primary-subtle text-primary mb-2">
-        Buku
-    </span>
 
-    <h6 class="fw-bold" style="min-height:48px;">
-        <?= htmlspecialchars($buku['judul_buku'] ?? '-'); ?>
-    </h6>
+                        <!-- PENERBIT -->
+                        <p class="small text-muted mb-2">
+                            <i class="bi bi-building me-1"></i>
+                            <?= htmlspecialchars($buku['penerbit'] ?? '-'); ?>
+                        </p>
 
-    <!-- PENGARANG / PENULIS -->
-    <p class="small text-muted mb-1">
-        <i class="bi bi-person me-1"></i>
-        <?= htmlspecialchars($buku['penulis'] ?? '-'); ?>
-    </p>
 
-    <!-- PENERBIT -->
-    <p class="small text-muted mb-3">
-        <i class="bi bi-building me-1"></i>
-        <?= htmlspecialchars($buku['penerbit'] ?? '-'); ?>
-    </p>
+                        <!-- JUMLAH EKSEMPLAR -->
+                        <div class="mb-3">
 
-    <!-- TOMBOL LIHAT DETAIL BUKU -->
-    <button
-    class="btn btn-primary rounded-pill mt-auto"
-    data-bs-toggle="modal"
-    data-bs-target="#detailBuku<?= $buku['id_buku']; ?>">
+                            <span class="badge bg-success-subtle text-success">
 
-    Lihat Detail
+                                <i class="bi bi-box-seam me-1"></i>
 
-    </button>
+                                <?= htmlspecialchars($buku['jumlah_eksemplar'] ?? '0'); ?>
 
-</div>  
+                                Eksemplar
 
-</div>
+                            </span>
 
-</div>
+                        </div>
 
-<!-- MODAL DETAIL BUKU -->
 
-<div class="modal fade" id="detailBuku<?= $buku['id_buku']; ?>">
+                        <!-- TOMBOL DETAIL -->
+                        <button
+                            type="button"
+                            class="btn btn-primary rounded-pill mt-auto"
+                            data-bs-toggle="modal"
+                            data-bs-target="#detailBuku<?= $buku['id_buku']; ?>">
 
-<div class="modal-dialog modal-lg modal-dialog-centered">
+                            <i class="bi bi-eye me-1"></i>
+                            Lihat Detail
 
-<div class="modal-content rounded-4 border-0">
+                        </button>
 
-<div class="modal-header bg-primary text-white">
+                    </div>
 
-<h5 class="modal-title">
+                </div>
 
-Detail Buku
+            </div>
 
-</h5>
 
-<button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            <!-- ================================================= -->
+            <!-- MODAL DETAIL BUKU -->
+            <!-- ================================================= -->
 
-</div>
+            <div
+                class="modal fade"
+                id="detailBuku<?= $buku['id_buku']; ?>"
+                tabindex="-1"
+                aria-hidden="true">
 
-<div class="modal-body p-4">
+                <div class="modal-dialog modal-lg modal-dialog-centered">
 
-<h4 class="fw-bold mb-3">
-<?= htmlspecialchars($buku['judul_buku'] ?? '-'); ?>
-</h4>
+                    <div class="modal-content rounded-4 border-0">
 
-<div class="row g-3">
 
-<div class="col-md-6">
+                        <!-- MODAL HEADER -->
+                        <div class="modal-header bg-primary text-white">
 
-<small class="text-muted">Kode Buku</small>
+                            <h5 class="modal-title">
+                                <i class="bi bi-book me-2"></i>
+                                Detail Buku
+                            </h5>
 
-<div><?= htmlspecialchars($buku['kode_buku'] ?? '-'); ?></div>
+                            <button
+                                type="button"
+                                class="btn-close btn-close-white"
+                                data-bs-dismiss="modal"
+                                aria-label="Close">
+                            </button>
 
-</div>
+                        </div>
 
-<div class="col-md-6">
 
-<small class="text-muted">Penulis</small>
+                        <!-- MODAL BODY -->
+                        <div class="modal-body p-4">
 
-<div><?= htmlspecialchars($buku['pengarang'] ?? '-'); ?></div>
+                            <!-- JUDUL -->
+                            <h4 class="fw-bold mb-4">
+                                <?= htmlspecialchars($buku['judul_buku'] ?? '-'); ?>
+                            </h4>
 
-</div>
 
-<div class="col-md-6">
+                            <div class="row g-4">
 
-<small class="text-muted">Penerbit</small>
 
-<div><?= htmlspecialchars($buku['penerbit'] ?? '-'); ?></div>
+                                <!-- KODE BUKU -->
+                                <div class="col-md-6">
 
-</div>
+                                    <small class="text-muted">
+                                        Kode Buku
+                                    </small>
 
-<div class="col-md-6">
+                                    <div class="fw-semibold">
+                                        <?= htmlspecialchars($buku['kode_buku'] ?? '-'); ?>
+                                    </div>
 
-<small class="text-muted">Tahun Terbit</small>
+                                </div>
 
-<div><?= htmlspecialchars($buku['tahun_terbit'] ?? '-'); ?></div>
 
-</div>
+                                <!-- PENULIS -->
+                                <div class="col-md-6">
 
-<div class="col-1id mt-3">
+                                    <small class="text-muted">
+                                        Penulis
+                                    </small>
 
-<small class="text-muted">Stok Buku</small>
+                                    <div class="fw-semibold">
+                                        <?= htmlspecialchars($buku['penulis'] ?? '-'); ?>
+                                    </div>
 
-<div class="fw-bold text-primary"><?= htmlspecialchars($buku['stok'] ?? '-'); ?> Eksemplar</div>
+                                </div>
 
-</div>
 
-</div>
+                                <!-- PENERBIT -->
+                                <div class="col-md-6">
 
-</div>
+                                    <small class="text-muted">
+                                        Penerbit
+                                    </small>
 
-</div>
+                                    <div class="fw-semibold">
+                                        <?= htmlspecialchars($buku['penerbit'] ?? '-'); ?>
+                                    </div>
 
-</div>
+                                </div>
 
-</div>
 
-<?php endwhile; ?>
+                                <!-- TAHUN TERBIT -->
+                                <div class="col-md-6">
 
-</div>
+                                    <small class="text-muted">
+                                        Tahun Terbit
+                                    </small>
+
+                                    <div class="fw-semibold">
+                                        <?= htmlspecialchars($buku['tahun_terbit'] ?? '-'); ?>
+                                    </div>
+
+                                </div>
+
+
+                                <!-- JUMLAH HALAMAN -->
+                                <div class="col-md-6">
+
+                                    <small class="text-muted">
+                                        Jumlah Halaman
+                                    </small>
+
+                                    <div class="fw-semibold">
+                                        <?= htmlspecialchars($buku['jumlah_halaman'] ?? '-'); ?>
+
+                                        <?php if (!empty($buku['jumlah_halaman'])): ?>
+                                            Halaman
+                                        <?php endif; ?>
+
+                                    </div>
+
+                                </div>
+
+
+                                <!-- JUMLAH EKSEMPLAR -->
+                                <div class="col-md-6">
+
+                                    <small class="text-muted">
+                                        Jumlah Eksemplar
+                                    </small>
+
+                                    <div class="fw-bold text-primary">
+
+                                        <i class="bi bi-box-seam me-1"></i>
+
+                                        <?= htmlspecialchars($buku['jumlah_eksemplar'] ?? '0'); ?>
+
+                                        Eksemplar
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- MODAL FOOTER -->
+                        <div class="modal-footer">
+
+                            <button
+                                type="button"
+                                class="btn btn-secondary rounded-pill"
+                                data-bs-dismiss="modal">
+
+                                Tutup
+
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        <?php endwhile; ?>
+
+    </div>
 
 </section>
 
