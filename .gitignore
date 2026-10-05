@@ -1,0 +1,26 @@
+# File konfigurasi lokal
+.env
+
+# Backup database
+*.sql
+*.sql.zip
+*.bak
+*.backup
+
+# File sementara
+*.tmp
+*.log
+
+# File sistem Windows
+Thumbs.db
+Desktop.ini
+
+# File sistem macOS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+
+# Cache
+.cache/

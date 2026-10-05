@@ -1,0 +1,8 @@
+# Mencegah orang melihat daftar file di dalam direktori folder
+Options -Indexes
+
+# Melindungi file koneksi agar tidak bisa diakses langsung dari browser
+<Files "koneksi.php">
+    Order Deny,Allow
+    Deny from all
+</Files>
