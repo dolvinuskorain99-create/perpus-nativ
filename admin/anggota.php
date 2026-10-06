@@ -46,7 +46,6 @@ if (isset($_POST['tambah_anggota'])) {
         if (mysqli_num_rows($cek_user) > 0) {
             $pesan_gagal = "Username atau Email sudah terdaftar!";
         } else {
-            // Admin menambahkan langsung berstatus aktif
             $query_insert = "INSERT INTO users (nim, username, email, password, status) VALUES ('$nim', '$username', '$email', '$password', 'aktif')";
             if (mysqli_query($koneksi, $query_insert)) {
                 header("Location: anggota.php?pesan=sukses_tambah");
@@ -182,7 +181,85 @@ $nomor_akhir = min($offset + $batas, $total_data);
         .table tbody td { padding: 13px 14px; font-size: 12.5px; color: #334155; vertical-align: middle; border-bottom: 1px solid #edf1f5; }
         .action-buttons { display: flex; align-items: center; justify-content: center; gap: 5px; }
         .action-buttons .btn { width: 32px; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; }
-        .library-card-preview { width: 380px; height: 220px; background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%); border-radius: 12px; color: white; padding: 16px; position: relative; margin: 0 auto; border: 2px solid #fbbf24; }
+
+        /* Styling Kartu Anggota Formal ala Kartu Identitas Umum dengan Logo di Atas */
+        .card-anggota-preview {
+            width: 100%;
+            max-width: 440px;
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+            border-radius: 16px;
+            color: #ffffff;
+            padding: 20px 24px;
+            position: relative;
+            margin: 0 auto;
+            box-shadow: 0 10px 25px rgba(15, 23, 42, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            text-align: left;
+        }
+        .card-anggota-top {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding-bottom: 12px;
+            margin-bottom: 14px;
+        }
+        .card-anggota-top img {
+            width: 45px;
+            height: 45px;
+            object-fit: contain;
+            /* background: rgba(255, 255, 255, 0.95); */
+            padding: 4px;
+            border-radius: 8px;
+        }
+        .card-anggota-top-text h6 {
+            font-size: 13.5px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            margin: 0 0 2px 0;
+            color: #fbbf24;
+        }
+        .card-anggota-top-text span {
+            font-size: 10px;
+            color: #94a3b8;
+            display: block;
+        }
+        .card-anggota-row {
+            display: flex;
+            margin-bottom: 8px;
+            font-size: 12px;
+        }
+        .card-anggota-label {
+            width: 110px;
+            color: #94a3b8;
+            font-weight: 500;
+        }
+        .card-anggota-sep {
+            width: 10px;
+            color: #94a3b8;
+            text-align: center;
+        }
+        .card-anggota-val {
+            flex: 1;
+            color: #ffffff;
+            font-weight: 600;
+        }
+        .card-anggota-val.font-monospace {
+            font-family: monospace;
+            letter-spacing: 1px;
+            color: #fbbf24;
+        }
+        .card-anggota-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 9.5px;
+            color: #94a3b8;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            margin-top: 14px;
+            padding-top: 10px;
+            letter-spacing: 0.5px;
+        }
     </style>
 </head>
 <body>
@@ -269,7 +346,6 @@ $nomor_akhir = min($offset + $batas, $total_data);
                                     <td class="text-center">
                                         <div class="action-buttons">
                                             <?php if (isset($row['status']) && $row['status'] === 'pending'): ?>
-                                                <!-- Tombol Setujui Akun -->
                                                 <a href="anggota.php?aksi=setujui&id=<?= $row['id_user']; ?>" class="btn btn-success text-white btn-sm" title="Setujui Akun">
                                                     <i class="bi bi-check-lg"></i>
                                                 </a>
@@ -283,13 +359,16 @@ $nomor_akhir = min($offset + $batas, $total_data);
                                             </button>
                                             <button type="button" class="btn btn-warning text-white btn-sm" title="Edit"
                                                     data-bs-toggle="modal" data-bs-target="#modalEditAnggota"
-                                                    data-id="<?= $row['id_user']; ?>" data-nim="<?= htmlspecialchars($row['nim'] ?? ''); ?>"
-                                                    data-username="<?= htmlspecialchars($row['username'] ?? ''); ?>" data-email="<?= htmlspecialchars($row['email'] ?? ''); ?>">
+                                                    data-id="<?= $row['id_user']; ?>" 
+                                                    data-nim="<?= htmlspecialchars($row['nim'] ?? ''); ?>"
+                                                    data-username="<?= htmlspecialchars($row['username'] ?? ''); ?>" 
+                                                    data-email="<?= htmlspecialchars($row['email'] ?? ''); ?>">
                                                 <i class="bi bi-pencil-square"></i>
                                             </button>
                                             <button type="button" class="btn btn-danger btn-sm" title="Hapus"
                                                     data-bs-toggle="modal" data-bs-target="#modalHapusAnggota"
-                                                    data-id="<?= $row['id_user']; ?>" data-username="<?= htmlspecialchars($row['username'] ?? ''); ?>">
+                                                    data-id="<?= $row['id_user']; ?>" 
+                                                    data-username="<?= htmlspecialchars($row['username'] ?? ''); ?>">
                                                 <i class="bi bi-trash"></i>
                                             </button>
                                         </div>
@@ -306,8 +385,192 @@ $nomor_akhir = min($offset + $batas, $total_data);
     </main>
 </div>
 
-<!-- Modal Tambah, Edit, Hapus, dan Cetak Kartu disesuaikan seperti sebelumnya -->
+<!-- ===================================================== -->
+<!-- MODAL TAMBAH ANGGOTA -->
+<!-- ===================================================== -->
+<div class="modal fade" id="modalTambahAnggota" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <form method="POST" action="anggota.php" class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold"><i class="bi bi-person-plus-fill me-1"></i> Tambah Anggota Baru</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">NIM</label>
+                    <input type="text" name="nim" class="form-control" required placeholder="Masukkan NIM...">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">Username</label>
+                    <input type="text" name="username" class="form-control" required placeholder="Masukkan username...">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">Email</label>
+                    <input type="email" name="email" class="form-control" required placeholder="Masukkan email...">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">Password</label>
+                    <input type="password" name="password" class="form-control" required placeholder="Masukkan password...">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+                <button type="submit" name="tambah_anggota" class="btn btn-primary btn-sm">Simpan</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ===================================================== -->
+<!-- MODAL EDIT ANGGOTA -->
+<!-- ===================================================== -->
+<div class="modal fade" id="modalEditAnggota" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <form method="POST" action="anggota.php" class="modal-content">
+            <input type="hidden" name="id_user" id="edit-id">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold"><i class="bi bi-pencil-square me-1"></i> Edit Data Anggota</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">NIM</label>
+                    <input type="text" name="nim" id="edit-nim" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">Username</label>
+                    <input type="text" name="username" id="edit-username" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">Email</label>
+                    <input type="email" name="email" id="edit-email" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">Password Baru <span class="text-muted fw-normal">(Kosongkan jika tidak diubah)</span></label>
+                    <input type="password" name="password" class="form-control" placeholder="Biarkan kosong jika tetap">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+                <button type="submit" name="edit_anggota" class="btn btn-warning text-white btn-sm">Perbarui</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ===================================================== -->
+<!-- MODAL HAPUS ANGGOTA -->
+<!-- ===================================================== -->
+<div class="modal fade" id="modalHapusAnggota" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold text-danger"><i class="bi bi-exclamation-triangle-fill me-1"></i> Konfirmasi Hapus</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Apakah Anda yakin ingin menghapus akun anggota <strong id="hapus-username"></strong>?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+                <a href="#" id="btn-eksekusi-hapus" class="btn btn-danger btn-sm">Hapus</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===================================================== -->
+<!-- MODAL CETAK KARTU ANGGOTA -->
+<!-- ===================================================== -->
+<div class="modal fade" id="modalCetakKartu" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold"><i class="bi bi-card-heading me-1"></i> Kartu Anggota Perpustakaan</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <!-- Tampilan Kartu Anggota Formal dengan Logo di Atas -->
+                <div class="card-anggota-preview">
+                    <div class="card-anggota-top">
+                        <!-- Pastikan path logo USTJ sesuai folder Anda (misal: ../assets/img/logo-ustj.png) -->
+                        <img src="../assets/img/logo.png" alt="Logo USTJ" onerror="this.src='https://via.placeholder.com/45?text=USTJ'">
+                        <div class="card-anggota-top-text">
+                            <h6>PERPUSTAKAAN USTJ</h6>
+                            <span>Universitas Sains dan Teknologi Jayapura</span>
+                        </div>
+                    </div>
+                    
+                    <div class="card-anggota-content">
+                        <div class="card-anggota-row">
+                            <div class="card-anggota-label">No. Anggota / NIM</div>
+                            <div class="card-anggota-sep">:</div>
+                            <div class="card-anggota-val font-monospace" id="card-nim">-</div>
+                        </div>
+                        <div class="card-anggota-row">
+                            <div class="card-anggota-label">Nama Lengkap</div>
+                            <div class="card-anggota-sep">:</div>
+                            <div class="card-anggota-val" id="card-username">-</div>
+                        </div>
+                        <div class="card-anggota-row">
+                            <div class="card-anggota-label">Email</div>
+                            <div class="card-anggota-sep">:</div>
+                            <div class="card-anggota-val" id="card-email" style="font-size: 11px; word-break: break-all;">-</div>
+                        </div>
+                        <div class="card-anggota-row">
+                            <div class="card-anggota-label">Masa Berlaku</div>
+                            <div class="card-anggota-sep">:</div>
+                            <div class="card-anggota-val" style="color: #4ade80;">Selama Aktif Kuliah</div>
+                        </div>
+                    </div>
+
+                    <div class="card-anggota-footer">
+                        <span>KARTU ANGGOTA RESMI</span>
+                        <span>PERPUSTAKAAN USTJ JAYAPURA</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Tutup</button>
+                <button type="button" class="btn btn-primary btn-sm" onclick="window.print()"><i class="bi bi-printer me-1"></i> Cetak Kartu</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const modalEditAnggota = document.getElementById('modalEditAnggota');
+    if (modalEditAnggota) {
+        modalEditAnggota.addEventListener('show.bs.modal', function (event) {
+            let button = event.relatedTarget;
+            document.getElementById('edit-id').value = button.getAttribute('data-id');
+            document.getElementById('edit-nim').value = button.getAttribute('data-nim');
+            document.getElementById('edit-username').value = button.getAttribute('data-username');
+            document.getElementById('edit-email').value = button.getAttribute('data-email');
+        });
+    }
+
+    const modalHapusAnggota = document.getElementById('modalHapusAnggota');
+    if (modalHapusAnggota) {
+        modalHapusAnggota.addEventListener('show.bs.modal', function (event) {
+            let button = event.relatedTarget;
+            let id = button.getAttribute('data-id');
+            let username = button.getAttribute('data-username');
+            document.getElementById('hapus-username').textContent = username;
+            document.getElementById('btn-eksekusi-hapus').setAttribute('href', 'anggota.php?aksi=hapus&id=' + id);
+        });
+    }
+
+    const modalCetakKartu = document.getElementById('modalCetakKartu');
+    if (modalCetakKartu) {
+        modalCetakKartu.addEventListener('show.bs.modal', function (event) {
+            let button = event.relatedTarget;
+            document.getElementById('card-nim').textContent = button.getAttribute('data-nim');
+            document.getElementById('card-username').textContent = button.getAttribute('data-username');
+            document.getElementById('card-email').textContent = button.getAttribute('data-email');
+        });
+    }
+</script>
 </body>
 </html>
