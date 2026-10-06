@@ -2,7 +2,7 @@
 
 session_start();
 
-include '../koneksi.php';
+include '../../koneksi.php';
 
 // =====================================================
 // VALIDASI LOGIN

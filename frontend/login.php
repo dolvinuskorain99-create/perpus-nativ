@@ -56,7 +56,7 @@ if (isset($_POST['login'])) {
                         $_SESSION['username']     = $row['username'];
                         $_SESSION['user_id']      = $row['id_user'];
                         $_SESSION['nama_lengkap'] = $row['nama_lengkap'] ?? 'Mahasiswa';
-                        header("Location: profil_user.php");
+                        header("Location: anggota/dashboard.php");
                         exit;
                     } else {
                         $error_login = "Password yang Anda masukkan salah!";

@@ -217,7 +217,7 @@ $halaman = basename($_SERVER['PHP_SELF']);
                             </li>
 
                             <li>
-                                <a class="dropdown-item" href="profil_user.php">
+                                <a class="dropdown-item" href="anggota/dashboard.php">
                                     <i class="bi bi-person me-2 text-primary"></i>
                                     Profil Saya
                                 </a>
