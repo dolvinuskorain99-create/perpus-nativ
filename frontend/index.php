@@ -13,7 +13,7 @@ if(isset($_GET['cari']) && trim($_GET['cari']) != ''){
     $hasil_buku = mysqli_query($koneksi,"
         SELECT * FROM buku
         WHERE judul_buku LIKE '%$keyword%'
-        OR penulis LIKE '%$keyword%'
+        OR pengarang LIKE '%$keyword%'
         OR penerbit LIKE '%$keyword%'
         ORDER BY id_buku DESC
         LIMIT 8
@@ -22,7 +22,7 @@ if(isset($_GET['cari']) && trim($_GET['cari']) != ''){
     $hasil_skripsi = mysqli_query($koneksi,"
         SELECT * FROM skripsi
         WHERE judul_skripsi LIKE '%$keyword%'
-        OR nama_penulis LIKE '%$keyword%'
+        OR nama_pengarang LIKE '%$keyword%'
         OR nim_mahasiswa LIKE '%$keyword%'
         OR prodi LIKE '%$keyword%'
         ORDER BY id_skripsi DESC
@@ -354,7 +354,7 @@ Cari
                         <!-- PENULIS -->
                         <p class="small text-muted mb-1">
                             <i class="bi bi-person me-1"></i>
-                            <?= htmlspecialchars($buku['penulis'] ?? '-'); ?>
+                            <?= htmlspecialchars($buku['pengarang'] ?? '-'); ?>
                         </p>
 
 
@@ -374,7 +374,7 @@ Cari
 
                                 <?= htmlspecialchars($buku['jumlah_eksemplar'] ?? '0'); ?>
 
-                                Eksemplar
+                                Stok Buku
 
                             </span>
 
@@ -467,7 +467,7 @@ Cari
                                     </small>
 
                                     <div class="fw-semibold">
-                                        <?= htmlspecialchars($buku['penulis'] ?? '-'); ?>
+                                        <?= htmlspecialchars($buku['pengarang'] ?? '-'); ?>
                                     </div>
 
                                 </div>
@@ -524,7 +524,7 @@ Cari
                                 <div class="col-md-6">
 
                                     <small class="text-muted">
-                                        Jumlah Eksemplar
+                                        Jumlah Stok
                                     </small>
 
                                     <div class="fw-bold text-primary">
@@ -533,7 +533,7 @@ Cari
 
                                         <?= htmlspecialchars($buku['jumlah_eksemplar'] ?? '0'); ?>
 
-                                        Eksemplar
+                                        Stok
 
                                     </div>
 

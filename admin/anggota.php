@@ -18,10 +18,30 @@ $pesan_sukses = '';
 $pesan_gagal = '';
 
 // =====================================================
+// =====================================================
 // PROSES APPROVAL / UBAH STATUS ANGGOTA
 // =====================================================
 if (isset($_GET['aksi']) && $_GET['aksi'] === 'setujui') {
     $id_user = (int)$_GET['id'];
+    
+    // 1. Ambil data user berdasarkan id_user
+    $q_user = mysqli_query($koneksi, "SELECT * FROM users WHERE id_user = $id_user");
+    $data_user = mysqli_fetch_assoc($q_user);
+
+    if ($data_user) {
+        $nim   = $data_user['nim'];
+        $nama  = $data_user['nama_lengkap']; // Sesuaikan jika kolom di users namanya 'nama_lengkap' atau 'nama'
+        $email = $data_user['email'];
+
+        // 2. Cek apakah NIM sudah ada di tabel anggota agar tidak duplikat
+        $cek_agt = mysqli_query($koneksi, "SELECT * FROM anggota WHERE nim = '$nim'");
+        if (mysqli_num_rows($cek_agt) == 0) {
+            // Masukkan secara otomatis ke tabel anggota
+            mysqli_query($koneksi, "INSERT INTO anggota (nim, nama, email) VALUES ('$nim', '$nama', '$email')");
+        }
+    }
+
+    // 3. Update status di tabel users menjadi 'aktif'
     $query_approval = "UPDATE users SET status = 'aktif' WHERE id_user = $id_user";
     if (mysqli_query($koneksi, $query_approval)) {
         header("Location: anggota.php?pesan=sukses_setuju");

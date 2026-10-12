@@ -14,41 +14,34 @@ if (!$koneksi) {
     die('Koneksi database gagal: ' . mysqli_connect_error());
 }
 
-$pesan_sukses = '';
 $pesan_gagal = '';
 
 // =====================================================
-// PROSES TAMBAH PEMINJAMAN BARU
+// PROSES TAMBAH PEMINJAMAN BARU (oleh admin)
 // =====================================================
 if (isset($_POST['tambah_peminjaman'])) {
-    $id_buku     = (int)$_POST['id_buku'];
-    $id_anggota  = (int)$_POST['id_anggota'];
+    $id_buku        = (int)$_POST['id_buku'];
+    $id_anggota     = (int)$_POST['id_anggota'];
     $tanggal_pinjam = date('Y-m-d');
-    // Tenggat waktu pengembalian misal 7 hari dari sekarang
-    $tgl_kembali_rencana = date('Y-m-d', strtotime('+7 days'));
 
     if ($id_buku > 0 && $id_anggota > 0) {
-        // Cek stok buku terlebih dahulu
-        $cek_buku = mysqli_query($koneksi, "SELECT stok, judul FROM buku WHERE id_buku = $id_buku");
-        $data_buku = mysqli_fetch_assoc($cek_buku);
+        // Kurangi stok hanya jika masih tersedia
+        mysqli_query($koneksi, "UPDATE buku SET jumlah_eksemplar = jumlah_eksemplar - 1 WHERE id_buku = $id_buku AND jumlah_eksemplar > 0");
 
-        if ($data_buku && $data_buku['stok'] > 0) {
-            // Kurangi stok buku
-            $stok_baru = $data_buku['stok'] - 1;
-            mysqli_query($koneksi, "UPDATE buku SET stok = $stok_baru WHERE id_buku = $id_buku");
-
-            // Insert ke tabel peminjaman
-            $query_insert = "INSERT INTO peminjaman (id_buku, id_anggota, tanggal_pinjam, status) 
+        if (mysqli_affected_rows($koneksi) > 0) {
+            $query_insert = "INSERT INTO peminjaman (id_buku, id_anggota, tanggal_pinjam, status)
                              VALUES ($id_buku, $id_anggota, '$tanggal_pinjam', 'Dipinjam')";
-            
+
             if (mysqli_query($koneksi, $query_insert)) {
                 header("Location: peminjaman.php?pesan=sukses_tambah");
                 exit();
             } else {
+                // Kembalikan stok jika insert gagal
+                mysqli_query($koneksi, "UPDATE buku SET jumlah_eksemplar = jumlah_eksemplar + 1 WHERE id_buku = $id_buku");
                 $pesan_gagal = "Gagal menyimpan data peminjaman: " . mysqli_error($koneksi);
             }
         } else {
-            $pesan_gagal = "Stok buku '{$data_buku['judul']}' sedang kosong!";
+            $pesan_gagal = "Stok buku tersebut sedang kosong!";
         }
     } else {
         $pesan_gagal = "Silakan pilih buku dan anggota terlebih dahulu!";
@@ -61,21 +54,18 @@ if (isset($_POST['tambah_peminjaman'])) {
 if (isset($_GET['aksi']) && $_GET['aksi'] === 'kembali' && isset($_GET['id'])) {
     $id_pinjam = (int)$_GET['id'];
 
-    // Ambil data peminjaman untuk mengetahui id_buku yang dikembalikan
-    $q_pinjam = mysqli_query($koneksi, "SELECT * FROM peminjaman WHERE id_peminjaman = $id_pinjam AND status = 'Dipinjam'");
+    $q_pinjam  = mysqli_query($koneksi, "SELECT * FROM peminjaman WHERE id_peminjaman = $id_pinjam AND status = 'Dipinjam'");
     $dt_pinjam = mysqli_fetch_assoc($q_pinjam);
 
     if ($dt_pinjam) {
-        $id_buku_kembali = $dt_pinjam['id_buku'];
+        $id_buku_kembali  = (int)$dt_pinjam['id_buku'];
         $tanggal_sekarang = date('Y-m-d');
 
-        // Update status peminjaman jadi 'Kembali'
         $update_peminjaman = mysqli_query($koneksi, "UPDATE peminjaman SET status = 'Kembali', tanggal_kembali = '$tanggal_sekarang' WHERE id_peminjaman = $id_pinjam");
 
-        // Kembalikan/tambah stok buku (+1)
-        mysqli_query($koneksi, "UPDATE buku SET stok = stok + 1 WHERE id_buku = $id_buku_kembali");
-
         if ($update_peminjaman) {
+            // Pulihkan stok (+1)
+            mysqli_query($koneksi, "UPDATE buku SET jumlah_eksemplar = jumlah_eksemplar + 1 WHERE id_buku = $id_buku_kembali");
             header("Location: peminjaman.php?pesan=sukses_kembali");
             exit();
         } else {
@@ -87,26 +77,27 @@ if (isset($_GET['aksi']) && $_GET['aksi'] === 'kembali' && isset($_GET['id'])) {
 // =====================================================
 // PAGINATION & PENCARIAN
 // =====================================================
-$batas = 10;
+$batas   = 10;
 $halaman = isset($_GET['halaman']) ? (int)$_GET['halaman'] : 1;
 if ($halaman < 1) { $halaman = 1; }
 
 $keyword = isset($_GET['cari']) ? trim($_GET['cari']) : '';
-$where = [];
+$where   = [];
 
 if ($keyword !== '') {
-    $kw_esc = mysqli_real_escape_string($koneksi, $keyword);
-    // Mencari berdasarkan judul buku atau nama anggota (sesuaikan nama kolom tabel anggota Anda, misal: nama)
-    $where[] = "(buku.judul LIKE '%$kw_esc%' OR anggota.nama LIKE '%$kw_esc%')";
+    $kw_esc  = mysqli_real_escape_string($koneksi, $keyword);
+    $where[] = "(buku.judul_buku LIKE '%$kw_esc%' OR anggota.nama LIKE '%$kw_esc%' OR anggota.nim LIKE '%$kw_esc%')";
 }
 
 $sql_where = !empty($where) ? 'WHERE ' . implode(' AND ', $where) : '';
 
-// Query gabungan (JOIN) dengan tabel buku dan anggota
-$sql_count = "SELECT COUNT(*) AS total FROM peminjaman 
-              JOIN buku ON peminjaman.id_buku = buku.id_buku 
+$sql_count = "SELECT COUNT(*) AS total FROM peminjaman
+              JOIN buku ON peminjaman.id_buku = buku.id_buku
               JOIN anggota ON peminjaman.id_anggota = anggota.id_anggota $sql_where";
 $query_count = mysqli_query($koneksi, $sql_count);
+if (!$query_count) {
+    die('Query count gagal: ' . mysqli_error($koneksi));
+}
 $data_count = mysqli_fetch_assoc($query_count);
 $total_data = (int)($data_count['total'] ?? 0);
 
@@ -114,17 +105,21 @@ $total_halaman = max(1, (int)ceil($total_data / $batas));
 if ($halaman > $total_halaman) { $halaman = $total_halaman; }
 $offset = ($halaman - 1) * $batas;
 
-$sql_data = "SELECT peminjaman.*, buku.judul_buku AS judul, anggota.nama AS nama_anggota, anggota.nim 
-             FROM peminjaman 
-             JOIN buku ON peminjaman.id_buku = buku.id_buku 
-             JOIN anggota ON peminjaman.id_anggota = anggota.id_anggota 
+$sql_data = "SELECT peminjaman.*, buku.judul_buku AS judul, anggota.nama AS nama_anggota, anggota.nim
+             FROM peminjaman
+             JOIN buku ON peminjaman.id_buku = buku.id_buku
+             JOIN anggota ON peminjaman.id_anggota = anggota.id_anggota
              $sql_where ORDER BY peminjaman.id_peminjaman DESC LIMIT $offset, $batas";
 $query_data = mysqli_query($koneksi, $sql_data);
+if (!$query_data) {
+    die('Query data gagal: ' . mysqli_error($koneksi));
+}
+
 $params = [];
 if ($keyword !== '') { $params['cari'] = $keyword; }
 $query_string = !empty($params) ? '&' . http_build_query($params) : '';
 
-$nomor_awal = $total_data > 0 ? $offset + 1 : 0;
+$nomor_awal  = $total_data > 0 ? $offset + 1 : 0;
 $nomor_akhir = min($offset + $batas, $total_data);
 ?>
 
@@ -288,7 +283,7 @@ $nomor_akhir = min($offset + $batas, $total_data);
                     Kelola transaksi peminjaman dan pengembalian buku perpustakaan Universitas Sains dan Teknologi Jayapura.
                 </p>
             </div>
-            
+
             <div>
                 <button type="button" class="btn btn-primary d-inline-flex align-items-center gap-2 px-3 py-2 fw-semibold" data-bs-toggle="modal" data-bs-target="#modalTambahPinjam" style="border-radius: 8px;">
                     <i class="bi bi-plus-lg"></i>
@@ -312,7 +307,7 @@ $nomor_akhir = min($offset + $batas, $total_data);
 
         <?php if ($pesan_gagal !== ''): ?>
             <div class="alert alert-danger border-0 shadow-sm mb-4">
-                <i class="bi bi-x-circle-fill me-2"></i> <?= $pesan_gagal; ?>
+                <i class="bi bi-x-circle-fill me-2"></i> <?= htmlspecialchars($pesan_gagal); ?>
             </div>
         <?php endif; ?>
 
@@ -324,7 +319,7 @@ $nomor_akhir = min($offset + $batas, $total_data);
                         <div class="col-xl-8 col-md-12">
                             <label class="filter-label">CARI PEMINJAMAN</label>
                             <div class="input-group">
-                                <input type="text" name="cari" class="form-control" placeholder="Cari berdasarkan judul buku atau nama peminjam..." value="<?= htmlspecialchars($keyword); ?>">
+                                <input type="text" name="cari" class="form-control" placeholder="Cari berdasarkan judul buku, nama, atau NIM peminjam..." value="<?= htmlspecialchars($keyword); ?>">
                                 <button type="submit" class="btn btn-primary search-button">
                                     <i class="bi bi-search me-1"></i> Cari
                                 </button>
@@ -370,14 +365,14 @@ $nomor_akhir = min($offset + $batas, $total_data);
                                     <td class="text-center text-muted fw-semibold"><?= $no++; ?></td>
                                     <td>
                                         <div class="fw-semibold text-dark"><?= htmlspecialchars($row['nama_anggota']); ?></div>
-                                        <small class="text-muted">NIM: <?= htmlspecialchars($row['nim']); ?></small>
+                                        <small class="text-muted">NIM: <?= htmlspecialchars($row['nim'] ?? '-'); ?></small>
                                     </td>
                                     <td>
                                         <div class="fw-semibold text-primary"><?= htmlspecialchars($row['judul']); ?></div>
                                     </td>
                                     <td class="text-center"><?= date('d/m/Y', strtotime($row['tanggal_pinjam'])); ?></td>
                                     <td class="text-center">
-                                        <?= $row['tanggal_kembali'] ? date('d/m/Y', strtotime($row['tanggal_kembali'])) : '-'; ?>
+                                        <?= !empty($row['tanggal_kembali']) ? date('d/m/Y', strtotime($row['tanggal_kembali'])) : '-'; ?>
                                     </td>
                                     <td class="text-center">
                                         <?php if ($row['status'] === 'Dipinjam'): ?>
@@ -388,7 +383,7 @@ $nomor_akhir = min($offset + $batas, $total_data);
                                     </td>
                                     <td class="text-center">
                                         <?php if ($row['status'] === 'Dipinjam'): ?>
-                                            <a href="peminjaman.php?aksi=kembali&id=<?= $row['id_peminjaman']; ?>" class="btn btn-success btn-sm px-2 py-1 text-white fw-semibold" style="font-size: 11px; border-radius: 6px;" onclick="return confirm('Konfirmasi buku ini sudah dikembalikan?')">
+                                            <a href="peminjaman.php?aksi=kembali&id=<?= (int)$row['id_peminjaman']; ?>" class="btn btn-success btn-sm px-2 py-1 text-white fw-semibold" style="font-size: 11px; border-radius: 6px;" onclick="return confirm('Konfirmasi buku ini sudah dikembalikan?')">
                                                 <i class="bi bi-check-circle me-1"></i> Kembalikan
                                             </a>
                                         <?php else: ?>
@@ -451,7 +446,7 @@ $nomor_akhir = min($offset + $batas, $total_data);
                             <?php
                             $q_anggota = mysqli_query($koneksi, "SELECT * FROM anggota ORDER BY nama ASC");
                             while ($ang = mysqli_fetch_assoc($q_anggota)) {
-                                echo "<option value='{$ang['id_anggota']}'>{$ang['nama']} (NIM: {$ang['nim']})</option>";
+                                echo "<option value='" . (int)$ang['id_anggota'] . "'>" . htmlspecialchars($ang['nama']) . " (NIM: " . htmlspecialchars($ang['nim'] ?? '-') . ")</option>";
                             }
                             ?>
                         </select>
@@ -462,9 +457,9 @@ $nomor_akhir = min($offset + $batas, $total_data);
                         <select name="id_buku" class="form-select" required>
                             <option value="">-- Pilih Buku (Stok Tersedia) --</option>
                             <?php
-                            $q_buku_list = mysqli_query($koneksi, "SELECT * FROM buku WHERE stok > 0 ORDER BY judul ASC");
+                            $q_buku_list = mysqli_query($koneksi, "SELECT * FROM buku WHERE jumlah_eksemplar > 0 ORDER BY judul_buku ASC");
                             while ($bk = mysqli_fetch_assoc($q_buku_list)) {
-                                echo "<option value='{$bk['id_buku']}'>{$bk['judul']} (Stok: {$bk['stok']})</option>";
+                                echo "<option value='" . (int)$bk['id_buku'] . "'>" . htmlspecialchars($bk['judul_buku']) . " (Stok: " . (int)$bk['jumlah_eksemplar'] . ")</option>";
                             }
                             ?>
                         </select>
