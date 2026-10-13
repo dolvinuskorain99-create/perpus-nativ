@@ -23,8 +23,11 @@ $t_skripsi = mysqli_fetch_assoc($query_skripsi)['total'] ?? 0;
 $query_anggota = mysqli_query($koneksi, "SELECT COUNT(*) as total FROM users");
 $t_anggota = mysqli_fetch_assoc($query_anggota)['total'] ?? 0;
 
-// 4. Ambil 5 data skripsi terbaru untuk tabel aktivitas
+// 4. Ambil 5 data skripsi terbaru
 $query_skripsi_terbaru = mysqli_query($koneksi, "SELECT * FROM skripsi ORDER BY id_skripsi DESC LIMIT 5");
+
+// 5. Ambil 5 data buku terbaru
+$query_buku_terbaru = mysqli_query($koneksi, "SELECT * FROM buku ORDER BY id_buku DESC LIMIT 5");
 ?>
 
 <!DOCTYPE html>
@@ -70,6 +73,7 @@ $query_skripsi_terbaru = mysqli_query($koneksi, "SELECT * FROM skripsi ORDER BY 
             min-height: 100vh;
             width: calc(100% - var(--sidebar-width));
             background: var(--main-bg);
+            transition: all 0.3s ease;
         }
 
         .top-navbar {
@@ -161,17 +165,9 @@ $query_skripsi_terbaru = mysqli_query($koneksi, "SELECT * FROM skripsi ORDER BY 
         .table tbody tr:hover { background-color: #f8fafc; }
 
         @media (max-width: 991.98px) {
-            #main-content-wrapper { margin-left: 250px; width: calc(100% - 250px); }
-            .content-body { padding: 22px; }
-            .top-navbar { padding: 0 22px; }
-        }
-
-        @media (max-width: 767.98px) {
             #main-content-wrapper { margin-left: 0; width: 100%; }
-            .top-navbar { min-height: 62px; padding: 0 16px; }
-            .content-body { padding: 18px 15px; }
-            .page-title { font-size: 20px; }
-            .date-badge { display: none; }
+            .content-body { padding: 15px; }
+            .top-navbar { padding: 0 15px; }
         }
     </style>
 </head>
@@ -187,9 +183,6 @@ $query_skripsi_terbaru = mysqli_query($koneksi, "SELECT * FROM skripsi ORDER BY 
     <!-- TOP NAVBAR -->
     <nav class="top-navbar justify-content-between">
         <div class="d-flex align-items-center gap-2">
-            <button type="button" class="btn btn-sm btn-light d-md-none" id="sidebarToggle">
-                <i class="bi bi-list fs-5"></i>
-            </button>
             <div class="breadcrumb-admin">
                 <span class="text-dark fw-semibold">PerpusAdmin USTJ</span>
                 <span class="mx-1">/</span>
@@ -198,7 +191,7 @@ $query_skripsi_terbaru = mysqli_query($koneksi, "SELECT * FROM skripsi ORDER BY 
         </div>
 
         <div class="d-flex align-items-center gap-3">
-            <span class="date-badge">
+            <span class="date-badge d-none d-md-inline-block">
                 <i class="bi bi-calendar3 text-primary me-1"></i>
                 <?= date('d M Y'); ?>
             </span>
@@ -286,19 +279,66 @@ $query_skripsi_terbaru = mysqli_query($koneksi, "SELECT * FROM skripsi ORDER BY 
             </div>
         </div>
 
-        <!-- TABEL SKRIPSI TERBARU -->
+        <!-- TABEL BUKU TERBARU -->
         <div class="custom-card mb-4">
             <div class="card-header bg-white py-3 px-4 border-bottom d-flex justify-content-between align-items-center">
                 <h6 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
-                    <i class="bi bi-clock-history text-primary"></i> Data Skripsi / Tugas Akhir Terbaru
+                    <i class="bi bi-journal-check text-primary"></i> Koleksi Buku Terbaru
                 </h6>
-                <a href="skripsi.php" class="btn btn-sm btn-outline-primary fw-semibold">Lihat Semua</a>
+                <a href="buku.php" class="btn btn-sm btn-outline-primary fw-semibold">Lihat Semua</a>
             </div>
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
                     <thead>
                         <tr>
-                            <th class="ps-4">No</th>
+                            <th class="ps-4" width="50">No</th>
+                            <th>Judul Buku</th>
+                            <th>Penulis</th>
+                            <th>Penerbit</th>
+                            <th class="pe-4 text-center" width="90">Tahun</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if (mysqli_num_rows($query_buku_terbaru) > 0): ?>
+                            <?php $no = 1; while ($row_b = mysqli_fetch_assoc($query_buku_terbaru)): 
+                                $judul_buku   = $row_b['judul_buku'] ?? $row_b['judul'] ?? $row_b['nama_buku'] ?? '-';
+                                $penulis_buku = $row_b['pengarang'] ?? $row_b['penulis'] ?? '-';
+                                $penerbit_buku = $row_b['penerbit'] ?? '-';
+                                $tahun_buku   = $row_b['tahun_terbit'] ?? $row_b['tahun'] ?? '-';
+                            ?>
+                                <tr>
+                                    <td class="ps-4 text-muted fw-semibold"><?= $no++; ?></td>
+                                    <td>
+                                        <div class="fw-semibold text-dark text-truncate" style="max-width: 320px;" title="<?= htmlspecialchars($judul_buku); ?>">
+                                            <?= htmlspecialchars($judul_buku); ?>
+                                        </div>
+                                    </td>
+                                    <td><?= htmlspecialchars($penulis_buku); ?></td>
+                                    <td class="text-muted"><?= htmlspecialchars($penerbit_buku); ?></td>
+                                    <td class="pe-4 text-center"><span class="badge bg-light text-dark border"><?= htmlspecialchars($tahun_buku); ?></span></td>
+                                </tr>
+                            <?php endwhile; ?>
+                        <?php else: ?>
+                            <tr><td colspan="5" class="text-center py-4 text-muted">Belum ada data buku yang tersimpan.</td></tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TABEL SKRIPSI TERBARU -->
+        <div class="custom-card mb-4">
+            <div class="card-header bg-white py-3 px-4 border-bottom d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+                    <i class="bi bi-mortarboard-fill text-success"></i> Data Skripsi / Tugas Akhir Terbaru
+                </h6>
+                <a href="skripsi.php" class="btn btn-sm btn-outline-success fw-semibold">Lihat Semua</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th class="ps-4" width="50">No</th>
                             <th>NIM</th>
                             <th>Nama Penulis</th>
                             <th>Judul Skripsi</th>
@@ -313,17 +353,15 @@ $query_skripsi_terbaru = mysqli_query($koneksi, "SELECT * FROM skripsi ORDER BY 
                                     <td><span class="font-monospace text-primary fw-semibold"><?= htmlspecialchars($row['nim_mahasiswa'] ?? '-'); ?></span></td>
                                     <td class="fw-semibold"><?= htmlspecialchars($row['nama_penulis'] ?? '-'); ?></td>
                                     <td>
-                                        <div class="text-truncate" style="max-width: 450px;" title="<?= htmlspecialchars($row['judul_skripsi']); ?>">
-                                            <?= htmlspecialchars($row['judul_skripsi']); ?>
+                                        <div class="text-truncate" style="max-width: 400px;" title="<?= htmlspecialchars($row['judul_skripsi'] ?? ''); ?>">
+                                            <?= htmlspecialchars($row['judul_skripsi'] ?? '-'); ?>
                                         </div>
                                     </td>
                                     <td class="pe-4"><small class="text-muted"><?= htmlspecialchars($row['prodi'] ?? '-'); ?></small></td>
                                 </tr>
                             <?php endwhile; ?>
                         <?php else: ?>
-                            <tr>
-                                <td colspan="5" class="text-center py-4 text-muted">Belum ada data skripsi yang tersimpan.</td>
-                            </tr>
+                            <tr><td colspan="5" class="text-center py-4 text-muted">Belum ada data skripsi yang tersimpan.</td></tr>
                         <?php endif; ?>
                     </tbody>
                 </table>
