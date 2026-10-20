@@ -6,6 +6,7 @@
 // =====================================================
 session_start();
 require_once '../../koneksi.php';
+require_once __DIR__ . '/../../fungsi_peminjaman.php';
 
 if (!isset($_SESSION['user_login']) || $_SESSION['user_login'] !== true) {
     header("Location: ../login.php");
@@ -82,13 +83,23 @@ $nomor = 1;
                                 <th class="text-center" style="width: 5%;">No</th>
                                 <th style="width: 35%;">Judul Buku</th>
                                 <th style="width: 20%;">Tanggal Pinjam</th>
-                                <th style="width: 20%;">Tanggal Kembali</th>
-                                <th class="text-center" style="width: 20%;">Status</th>
+                                <th style="width: 20%;">Batas / Tanggal Kembali</th>
+                                <th class="text-center" style="width: 15%;">Denda</th>
+                                <th class="text-center" style="width: 15%;">Status</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php if ($query_riwayat && mysqli_num_rows($query_riwayat) > 0): ?>
                                 <?php while ($row = mysqli_fetch_assoc($query_riwayat)): ?>
+                                    <?php
+                                        $status_peminjaman = strtolower(trim($row['status']));
+                                        $tanggal_aktual = !empty($row['tanggal_kembali']) && $row['tanggal_kembali'] !== '0000-00-00'
+                                            ? $row['tanggal_kembali']
+                                            : null;
+                                        $info_kembali = hitung_info_pengembalian($row['tanggal_pinjam'], $tanggal_aktual);
+                                        $sedang_dipinjam = in_array($status_peminjaman, ['dipinjam', 'pinjam'], true);
+                                        $terlambat = $sedang_dipinjam && $info_kembali['hari_terlambat'] > 0;
+                                    ?>
                                     <tr>
                                         <td class="text-center text-muted fw-bold"><?= $nomor++; ?></td>
                                         <td>
@@ -102,28 +113,37 @@ $nomor = 1;
                                         </td>
                                         <td>
                                             <div class="text-dark">
-                                                <?php if (!empty($row['tanggal_kembali']) && $row['tanggal_kembali'] !== '0000-00-00'): ?>
-                                                    <i class="bi bi-calendar-check text-success me-1"></i> <?= date('d-m-Y', strtotime($row['tanggal_kembali'])); ?>
+                                                <?php if ($tanggal_aktual): ?>
+                                                    <i class="bi bi-calendar-check text-success me-1"></i> <?= date('d-m-Y', strtotime($tanggal_aktual)); ?>
                                                 <?php else: ?>
-                                                    <span class="text-muted">-</span>
+                                                    <span class="text-muted opacity-75 small"><i class="bi bi-calendar-event me-1"></i>Batas: <?= $info_kembali['jatuh_tempo']->format('d-m-Y'); ?></span>
                                                 <?php endif; ?>
                                             </div>
                                         </td>
                                         <td class="text-center">
-                                            <?php 
-                                                $status = trim($row['status']);
-                                                if (strtolower($status) === 'dipinjam' || strtolower($status) === 'pinjam'): 
-                                            ?>
+                                            <?php if ($info_kembali['denda'] > 0): ?>
+                                                <span class="text-danger fw-semibold">Rp<?= number_format($info_kembali['denda'], 0, ',', '.'); ?></span>
+                                                <small class="d-block text-muted"><?= $info_kembali['hari_terlambat']; ?> hari</small>
+                                            <?php else: ?>
+                                                <span class="text-muted">-</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td class="text-center">
+                                            <?php if ($terlambat): ?>
+                                                <span class="badge bg-danger text-white px-3 py-2 rounded-pill fw-bold shadow-sm">
+                                                    <i class="bi bi-exclamation-circle me-1"></i> Terlambat
+                                                </span>
+                                            <?php elseif ($sedang_dipinjam): ?>
                                                 <span class="badge bg-warning text-dark px-3 py-2 rounded-pill fw-bold shadow-sm">
                                                     <i class="bi bi-hourglass-split me-1"></i> Sedang Dipinjam
                                                 </span>
-                                            <?php elseif (strtolower($status) === 'dikembalikan' || strtolower($status) === 'kembali'): ?>
+                                            <?php elseif (in_array($status_peminjaman, ['dikembalikan', 'kembali'], true)): ?>
                                                 <span class="badge bg-success text-white px-3 py-2 rounded-pill fw-bold shadow-sm">
                                                     <i class="bi bi-check-circle me-1"></i> Dikembalikan
                                                 </span>
                                             <?php else: ?>
                                                 <span class="badge bg-secondary text-white px-3 py-2 rounded-pill fw-bold shadow-sm">
-                                                    <?= htmlspecialchars($status); ?>
+                                                    <?= htmlspecialchars($row['status']); ?>
                                                 </span>
                                             <?php endif; ?>
                                         </td>
@@ -131,7 +151,7 @@ $nomor = 1;
                                 <?php endwhile; ?>
                             <?php else: ?>
                                 <tr>
-                                    <td colspan="5" class="text-center py-5 text-muted">
+                                    <td colspan="6" class="text-center py-5 text-muted">
                                         <i class="bi bi-journal-x display-5 d-block mb-2 text-secondary opacity-50"></i>
                                         Belum ada riwayat transaksi peminjaman buku yang tercatat di sistem.
                                     </td>

@@ -10,6 +10,7 @@ ini_set('display_errors', 1);
 
 session_start();
 include '../koneksi.php';
+require_once __DIR__ . '/../fungsi_peminjaman.php';
 
 if (!$koneksi) {
     die('Koneksi database gagal: ' . mysqli_connect_error());
@@ -87,6 +88,7 @@ $query_kembali = mysqli_query($koneksi, "SELECT peminjaman.*, buku.judul_buku AS
                                 <th style="width: 30%;">Judul Buku</th>
                                 <th style="width: 15%;">Tgl Pinjam</th>
                                 <th style="width: 15%;">Tgl Kembali</th>
+                                <th class="text-center" style="width: 15%;">Denda</th>
                                 <th class="text-center" style="width: 10%;">Status</th>
                             </tr>
                         </thead>
@@ -95,6 +97,10 @@ $query_kembali = mysqli_query($koneksi, "SELECT peminjaman.*, buku.judul_buku AS
                             $no = 1;
                             if ($query_kembali && mysqli_num_rows($query_kembali) > 0): 
                                 while ($row = mysqli_fetch_assoc($query_kembali)): 
+                                    $tanggal_aktual = !empty($row['tanggal_kembali']) && $row['tanggal_kembali'] !== '0000-00-00'
+                                        ? $row['tanggal_kembali']
+                                        : null;
+                                    $info_kembali = hitung_info_pengembalian($row['tanggal_pinjam'], $tanggal_aktual);
                             ?>
                                 <tr>
                                     <td class="text-center text-muted fw-bold"><?= $no++; ?></td>
@@ -112,6 +118,14 @@ $query_kembali = mysqli_query($koneksi, "SELECT peminjaman.*, buku.judul_buku AS
                                         <div><i class="bi bi-calendar-check text-success me-1"></i> <?= !empty($row['tanggal_kembali']) ? date('d-m-Y', strtotime($row['tanggal_kembali'])) : '-'; ?></div>
                                     </td>
                                     <td class="text-center">
+                                        <?php if ($info_kembali['denda'] > 0): ?>
+                                            <span class="text-danger fw-semibold">Rp<?= number_format($info_kembali['denda'], 0, ',', '.'); ?></span>
+                                            <small class="d-block text-muted"><?= $info_kembali['hari_terlambat']; ?> hari terlambat</small>
+                                        <?php else: ?>
+                                            <span class="text-muted">-</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="text-center">
                                         <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill fw-bold shadow-sm">
                                             <i class="bi bi-check-circle-fill me-1"></i> Kembali
                                         </span>
@@ -122,7 +136,7 @@ $query_kembali = mysqli_query($koneksi, "SELECT peminjaman.*, buku.judul_buku AS
                             else: 
                             ?>
                                 <tr>
-                                    <td colspan="6" class="text-center py-5 text-muted">
+                                    <td colspan="7" class="text-center py-5 text-muted">
                                         <i class="bi bi-journal-x display-5 d-block mb-2 text-secondary opacity-50"></i>
                                         Belum ada data buku yang dikembalikan.<br>
                                         <small>Buku yang selesai dikembalikan akan otomatis masuk ke halaman ini.</small>

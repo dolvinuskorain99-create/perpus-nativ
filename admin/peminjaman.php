@@ -9,6 +9,7 @@ error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
 include '../koneksi.php';
+require_once __DIR__ . '/../fungsi_peminjaman.php';
 
 if (!$koneksi) {
     die('Koneksi database gagal: ' . mysqli_connect_error());
@@ -223,6 +224,7 @@ $nomor_akhir = min($offset + $batas, $total_data);
         .badge-status { padding: 6px 12px; font-size: 11px; font-weight: 600; border-radius: 6px; }
         .badge-dipinjam { background: #fef3c7; color: #d97706; }
         .badge-kembali { background: #dcfce7; color: #16a34a; }
+        .badge-terlambat { background: #fee2e2; color: #b91c1c; }
 
         @media (max-width: 991.98px) {
             #main-content-wrapper { margin-left: 250px; width: calc(100% - 250px); }
@@ -353,7 +355,8 @@ $nomor_akhir = min($offset + $batas, $total_data);
                             <th>Nama Peminjam (NIM)</th>
                             <th>Judul Buku</th>
                             <th class="text-center">Tgl Pinjam</th>
-                            <th class="text-center">Tgl Kembali</th>
+                            <th class="text-center">Batas / Tgl Kembali</th>
+                            <th class="text-center">Denda</th>
                             <th class="text-center">Status</th>
                             <th class="text-center" width="130">Aksi</th>
                         </tr>
@@ -361,6 +364,15 @@ $nomor_akhir = min($offset + $batas, $total_data);
                     <tbody>
                         <?php if (mysqli_num_rows($query_data) > 0): ?>
                             <?php $no = $offset + 1; while ($row = mysqli_fetch_assoc($query_data)): ?>
+                                <?php
+                                    $status_peminjaman = strtolower(trim($row['status']));
+                                    $tanggal_aktual = !empty($row['tanggal_kembali']) && $row['tanggal_kembali'] !== '0000-00-00'
+                                        ? $row['tanggal_kembali']
+                                        : null;
+                                    $info_kembali = hitung_info_pengembalian($row['tanggal_pinjam'], $tanggal_aktual);
+                                    $sedang_dipinjam = in_array($status_peminjaman, ['dipinjam', 'pinjam'], true);
+                                    $terlambat = $sedang_dipinjam && $info_kembali['hari_terlambat'] > 0;
+                                ?>
                                 <tr>
                                     <td class="text-center text-muted fw-semibold"><?= $no++; ?></td>
                                     <td>
@@ -372,17 +384,31 @@ $nomor_akhir = min($offset + $batas, $total_data);
                                     </td>
                                     <td class="text-center"><?= date('d/m/Y', strtotime($row['tanggal_pinjam'])); ?></td>
                                     <td class="text-center">
-                                        <?= !empty($row['tanggal_kembali']) ? date('d/m/Y', strtotime($row['tanggal_kembali'])) : '-'; ?>
+                                        <?php if ($tanggal_aktual): ?>
+                                            <?= date('d/m/Y', strtotime($tanggal_aktual)); ?>
+                                        <?php else: ?>
+                                            <span class="text-muted opacity-75 small">Batas: <?= $info_kembali['jatuh_tempo']->format('d/m/Y'); ?></span>
+                                        <?php endif; ?>
                                     </td>
                                     <td class="text-center">
-                                        <?php if ($row['status'] === 'Dipinjam'): ?>
+                                        <?php if ($info_kembali['denda'] > 0): ?>
+                                            <span class="text-danger fw-semibold">Rp<?= number_format($info_kembali['denda'], 0, ',', '.'); ?></span>
+                                            <small class="d-block text-muted"><?= $info_kembali['hari_terlambat']; ?> hari terlambat</small>
+                                        <?php else: ?>
+                                            <span class="text-muted">-</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="text-center">
+                                        <?php if ($terlambat): ?>
+                                            <span class="badge-status badge-terlambat">Terlambat</span>
+                                        <?php elseif ($sedang_dipinjam): ?>
                                             <span class="badge-status badge-dipinjam">Dipinjam</span>
                                         <?php else: ?>
                                             <span class="badge-status badge-kembali">Kembali</span>
                                         <?php endif; ?>
                                     </td>
                                     <td class="text-center">
-                                        <?php if ($row['status'] === 'Dipinjam'): ?>
+                                        <?php if ($sedang_dipinjam): ?>
                                             <a href="peminjaman.php?aksi=kembali&id=<?= (int)$row['id_peminjaman']; ?>" class="btn btn-success btn-sm px-2 py-1 text-white fw-semibold" style="font-size: 11px; border-radius: 6px;" onclick="return confirm('Konfirmasi buku ini sudah dikembalikan?')">
                                                 <i class="bi bi-check-circle me-1"></i> Kembalikan
                                             </a>
@@ -394,7 +420,7 @@ $nomor_akhir = min($offset + $batas, $total_data);
                             <?php endwhile; ?>
                         <?php else: ?>
                             <tr>
-                                <td colspan="7" class="text-center py-5 text-muted">
+                                <td colspan="8" class="text-center py-5 text-muted">
                                     <i class="bi bi-journal-x fs-1 text-secondary opacity-50 d-block mb-2"></i>
                                     <h5>Tidak ada data peminjaman ditemukan</h5>
                                 </td>
@@ -464,6 +490,7 @@ $nomor_akhir = min($offset + $batas, $total_data);
                             ?>
                         </select>
                     </div>
+                    <p class="text-muted opacity-75 small mb-0"><i class="bi bi-calendar-week me-1"></i>Masa peminjaman 7 hari. Jika terlambat, denda Rp2.000 per hari akan dihitung otomatis.</p>
                 </div>
                 <div class="modal-footer bg-light py-3 px-4 rounded-bottom-4">
                     <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">Batal</button>

@@ -5,10 +5,34 @@
 // FILE: admin/index.php
 // =====================================================
 
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 include '../koneksi.php';
 
 if (!$koneksi) {
     die('Koneksi database gagal: ' . mysqli_connect_error());
+}
+
+$id_admin_dashboard = (int) ($_SESSION['admin_id'] ?? 0);
+$admin_user_dashboard = $_SESSION['admin_user'] ?? 'Admin Perpus';
+$foto_admin_dashboard = '';
+if ($id_admin_dashboard > 0) {
+    $stmt_admin_dashboard = mysqli_prepare($koneksi, 'SELECT foto, username FROM admin WHERE id_admin = ? LIMIT 1');
+    if ($stmt_admin_dashboard) {
+        mysqli_stmt_bind_param($stmt_admin_dashboard, 'i', $id_admin_dashboard);
+        mysqli_stmt_execute($stmt_admin_dashboard);
+        mysqli_stmt_bind_result($stmt_admin_dashboard, $foto_admin_dashboard_db, $username_admin_dashboard_db);
+        if (mysqli_stmt_fetch($stmt_admin_dashboard)) {
+            $foto_admin_dashboard = basename((string) $foto_admin_dashboard_db);
+            $admin_user_dashboard = $username_admin_dashboard_db ?: $admin_user_dashboard;
+        }
+        mysqli_stmt_close($stmt_admin_dashboard);
+    }
+    if ($foto_admin_dashboard !== '' && !is_file(__DIR__ . '/../assets/img/profil/' . $foto_admin_dashboard)) {
+        $foto_admin_dashboard = '';
+    }
 }
 
 // 1. Hitung total data buku
@@ -101,6 +125,7 @@ $query_buku_terbaru = mysqli_query($koneksi, "SELECT * FROM buku ORDER BY id_buk
         .admin-avatar {
             width: 36px;
             height: 36px;
+            overflow: hidden;
             border-radius: 50%;
             background: #0d6efd;
             color: white;
@@ -109,6 +134,12 @@ $query_buku_terbaru = mysqli_query($koneksi, "SELECT * FROM buku ORDER BY id_buk
             justify-content: center;
             font-size: 13px;
             font-weight: 700;
+        }
+
+        .admin-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
         .content-body {
@@ -196,9 +227,15 @@ $query_buku_terbaru = mysqli_query($koneksi, "SELECT * FROM buku ORDER BY id_buk
                 <?= date('d M Y'); ?>
             </span>
             <div class="d-flex align-items-center gap-2">
-                <div class="admin-avatar">AP</div>
+                <div class="admin-avatar">
+                    <?php if ($foto_admin_dashboard !== ''): ?>
+                        <img src="../assets/img/profil/<?= rawurlencode($foto_admin_dashboard); ?>" alt="Foto profil admin">
+                    <?php else: ?>
+                        AP
+                    <?php endif; ?>
+                </div>
                 <div class="d-none d-sm-block">
-                    <div class="fw-semibold small" style="line-height: 1.2;">Admin Perpus</div>
+                    <div class="fw-semibold small" style="line-height: 1.2;"><?= htmlspecialchars($admin_user_dashboard, ENT_QUOTES, 'UTF-8'); ?></div>
                     <small class="text-muted" style="font-size: 10px;">USTJ Jayapura</small>
                 </div>
             </div>

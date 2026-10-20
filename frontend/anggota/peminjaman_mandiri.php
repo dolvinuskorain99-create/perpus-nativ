@@ -6,6 +6,7 @@
 // =====================================================
 session_start();
 require_once '../../koneksi.php';
+require_once __DIR__ . '/../../fungsi_peminjaman.php';
 
 if (!isset($_SESSION['user_login']) || $_SESSION['user_login'] !== true) {
     header("Location: ../login.php");
@@ -158,6 +159,7 @@ $qs_cari = count($qs_params) > 0 ? '&' . http_build_query($qs_params) : '';
                 <div>
                     <h3 class="fw-bold text-dark mb-1"><i class="bi bi-journal-check text-primary me-2"></i> Peminjaman Mandiri</h3>
                     <p class="text-muted mb-0">Pilih buku dari katalog perpustakaan USTJ untuk melakukan peminjaman secara mandiri.</p>
+                    <p class="text-muted opacity-75 small mt-1 mb-0"><i class="bi bi-calendar-week me-1"></i>Masa peminjaman 7 hari. Denda keterlambatan Rp2.000 per hari.</p>
                 </div>
             </div>
 

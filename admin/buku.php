@@ -87,6 +87,7 @@ $sql_data = "
     LIMIT $offset, $batas
 ";
 $query_data = mysqli_query($koneksi, $sql_data);
+$data_buku = $query_data ? mysqli_fetch_all($query_data, MYSQLI_ASSOC) : [];
 
 // =====================================================
 // AMBIL DAFTAR FAKULTAS & PRODI UNTUK DROPDOWN
@@ -241,6 +242,19 @@ $nomor_akhir = min($offset + $batas, $total_data);
         .table-wrapper { overflow-x: auto; width: 100%; }
         .table { margin: 0; min-width: 1050px; }
 
+        .book-list-mobile { display: grid; gap: 12px; }
+        .book-mobile-card {
+            padding: 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            background: #fff;
+            box-shadow: 0 1px 3px rgba(15, 23, 42, .04);
+        }
+        .book-mobile-title { min-width: 0; overflow-wrap: anywhere; }
+        .book-mobile-meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+        .book-mobile-label { display: block; margin-bottom: 3px; color: var(--text-muted); font-size: 10px; font-weight: 700; text-transform: uppercase; }
+        .book-mobile-value { color: #334155; font-size: 12px; overflow-wrap: anywhere; }
+
         .table thead th {
             padding: 13px 14px;
             background: #0f172a;
@@ -299,6 +313,13 @@ $nomor_akhir = min($offset + $batas, $total_data);
             .content-body { padding: 18px 15px; }
             .page-title { font-size: 20px; }
             .date-badge { display: none; }
+            .page-actions { width: 100%; }
+            .page-actions .btn { flex: 1; justify-content: center; padding: 10px 8px; font-size: 12px; }
+            .book-mobile-card { padding: 14px; }
+        }
+
+        @media (max-width: 380px) {
+            .book-mobile-meta { grid-template-columns: minmax(0, 1fr); gap: 9px; }
         }
     </style>
 </head>
@@ -354,7 +375,7 @@ $nomor_akhir = min($offset + $batas, $total_data);
                 </p>
             </div>
             
-            <div class="d-flex gap-2">
+            <div class="page-actions d-flex gap-2">
                 <a href="tambah_buku.php" class="btn btn-primary d-inline-flex align-items-center gap-2">
                     <i class="bi bi-plus-circle"></i>
                     Tambah Buku
@@ -514,7 +535,7 @@ $nomor_akhir = min($offset + $batas, $total_data);
         </div>
 
         <!-- TABEL BUKU -->
-        <div class="custom-card table-card">
+        <div class="custom-card table-card d-none d-lg-block">
             <div class="table-wrapper">
                 <table class="table table-hover align-middle">
                     <thead>
@@ -531,8 +552,8 @@ $nomor_akhir = min($offset + $batas, $total_data);
                         </tr>
                     </thead>
                     <tbody>
-                        <?php if (mysqli_num_rows($query_data) > 0): ?>
-                            <?php $no = $offset + 1; while ($row = mysqli_fetch_assoc($query_data)): ?>
+                        <?php if (!empty($data_buku)): ?>
+                            <?php $no = $offset + 1; foreach ($data_buku as $row): ?>
                                 <tr>
                                     <td class="text-center text-muted fw-semibold"><?= $no++; ?></td>
                                     <td><small><?= htmlspecialchars($row['nama_fakultas'] ?? '-'); ?></small></td>
@@ -560,7 +581,7 @@ $nomor_akhir = min($offset + $batas, $total_data);
                                         </div>
                                     </td>
                                 </tr>
-                            <?php endwhile; ?>
+                            <?php endforeach; ?>
                         <?php else: ?>
                             <tr>
                                 <td colspan="9" class="text-center py-5 text-muted">
@@ -573,6 +594,43 @@ $nomor_akhir = min($offset + $batas, $total_data);
                     </tbody>
                 </table>
             </div>
+        </div>
+
+        <div class="book-list-mobile d-lg-none">
+            <?php if (!empty($data_buku)): ?>
+                <?php $no = $offset + 1; foreach ($data_buku as $row): ?>
+                    <article class="book-mobile-card">
+                        <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                            <div class="book-mobile-title">
+                                <span class="small text-muted d-block mb-1">Buku #<?= $no++; ?></span>
+                                <h2 class="h6 fw-bold mb-0 text-dark"><?= htmlspecialchars($row['judul_buku']); ?></h2>
+                            </div>
+                            <div class="action-buttons flex-shrink-0">
+                                <a href="edit_buku.php?id=<?= $row['id_buku']; ?>" class="btn btn-warning btn-sm" title="Edit buku" aria-label="Edit <?= htmlspecialchars($row['judul_buku'], ENT_QUOTES, 'UTF-8'); ?>">
+                                    <i class="bi bi-pencil-square"></i>
+                                </a>
+                                <a href="hapus_buku.php?id=<?= $row['id_buku']; ?>" class="btn btn-danger btn-sm" title="Hapus buku" aria-label="Hapus <?= htmlspecialchars($row['judul_buku'], ENT_QUOTES, 'UTF-8'); ?>" onclick="return confirm('Apakah Anda yakin ingin menghapus buku ini?')">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="book-mobile-meta">
+                            <div><span class="book-mobile-label">Fakultas</span><span class="book-mobile-value"><?= htmlspecialchars($row['nama_fakultas'] ?? '-'); ?></span></div>
+                            <div><span class="book-mobile-label">Program Studi</span><span class="book-mobile-value"><?= htmlspecialchars($row['nama_prodi'] ?? '-'); ?></span></div>
+                            <div><span class="book-mobile-label">Pengarang</span><span class="book-mobile-value"><?= htmlspecialchars($row['pengarang']); ?></span></div>
+                            <div><span class="book-mobile-label">Penerbit</span><span class="book-mobile-value"><?= htmlspecialchars($row['penerbit']); ?></span></div>
+                            <div><span class="book-mobile-label">Tahun Terbit</span><span class="book-mobile-value"><?= htmlspecialchars($row['tahun_terbit']); ?></span></div>
+                            <div><span class="book-mobile-label">Stok</span><span class="badge bg-primary-subtle text-primary fw-bold"><?= htmlspecialchars($row['jumlah_eksemplar']); ?></span></div>
+                        </div>
+                    </article>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <div class="custom-card text-center p-4 text-muted">
+                    <i class="bi bi-journal-x fs-1 d-block mb-2"></i>
+                    <h2 class="h6 fw-bold">Tidak ada data buku ditemukan</h2>
+                    <p class="small mb-0">Coba ubah kata kunci atau reset filter.</p>
+                </div>
+            <?php endif; ?>
         </div>
 
         <!-- PAGINASI RAPI -->

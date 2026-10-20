@@ -1,3 +1,31 @@
+<?php
+
+
+
+$admin_user_sidebar = $_SESSION['admin_user'] ?? 'Administrator';
+$foto_admin_sidebar = '';
+$jumlah_terlambat = 0;
+if (isset($koneksi) && !empty($_SESSION['admin_id'])) {
+    $id_admin_sidebar = (int) $_SESSION['admin_id'];
+    $stmt_admin_sidebar = mysqli_prepare($koneksi, 'SELECT foto FROM admin WHERE id_admin = ? LIMIT 1');
+    if ($stmt_admin_sidebar) {
+        mysqli_stmt_bind_param($stmt_admin_sidebar, 'i', $id_admin_sidebar);
+        mysqli_stmt_execute($stmt_admin_sidebar);
+        mysqli_stmt_bind_result($stmt_admin_sidebar, $foto_admin_sidebar_db);
+        if (mysqli_stmt_fetch($stmt_admin_sidebar)) {
+            $foto_admin_sidebar = basename((string) $foto_admin_sidebar_db);
+        }
+        mysqli_stmt_close($stmt_admin_sidebar);
+    }
+    if ($foto_admin_sidebar !== '' && !is_file(__DIR__ . '/../assets/img/profil/' . $foto_admin_sidebar)) {
+        $foto_admin_sidebar = '';
+    }
+    $q_terlambat = mysqli_query($koneksi, "SELECT COUNT(*) AS total FROM peminjaman WHERE status = 'Dipinjam' AND DATE_ADD(tanggal_pinjam, INTERVAL 7 DAY) < CURDATE()");
+    if ($q_terlambat) {
+        $jumlah_terlambat = (int) (mysqli_fetch_assoc($q_terlambat)['total'] ?? 0);
+    }
+}
+?>
 <!-- Sidebar -->
 <nav id="sidebar" class="sidebar bg-dark text-white shadow-sm">
 
@@ -160,6 +188,9 @@
                     <i class="bi bi-arrow-counterclockwise"></i>
 
                     <span>Pengembalian</span>
+                    <?php if ($jumlah_terlambat > 0): ?>
+                        <span class="badge rounded-pill bg-danger ms-auto" title="Pinjaman terlambat"><?= $jumlah_terlambat; ?></span>
+                    <?php endif; ?>
 
                 </a>
 
@@ -206,6 +237,21 @@
                 </a>
 
             </li>
+             <li class="nav-item">
+
+                <a href="pengaturan.php"
+                   class="nav-link
+                   <?= basename($_SERVER['PHP_SELF']) == 'pengaturan.php'
+                       ? 'active'
+                       : ''; ?>">
+
+                    <i class="bi bi-gear"></i>
+
+                    <span>Pengaturan</span>
+
+                </a>
+
+            </li>
 
             <!-- Lihat Website -->
             <li class="nav-item website-item">
@@ -220,6 +266,20 @@
 
     <!-- Logout -->
     <div class="sidebar-footer">
+
+        <div class="admin-profile">
+            <div class="admin-profile-avatar">
+                <?php if ($foto_admin_sidebar !== ''): ?>
+                    <img src="../assets/img/profil/<?= rawurlencode($foto_admin_sidebar); ?>" alt="Foto profil admin">
+                <?php else: ?>
+                    <i class="bi bi-person-fill"></i>
+                <?php endif; ?>
+            </div>
+            <div class="admin-profile-details">
+                <span class="admin-profile-label">Administrator</span>
+                <strong title="<?= htmlspecialchars($admin_user_sidebar, ENT_QUOTES, 'UTF-8'); ?>"><?= htmlspecialchars($admin_user_sidebar, ENT_QUOTES, 'UTF-8'); ?></strong>
+            </div>
+        </div>
 
         <a href="../frontend/logout.php"
            class="logout-link">
@@ -382,6 +442,52 @@
 .sidebar-footer {
     padding: 14px;
     border-top: 1px solid rgba(255,255,255,.12);
+}
+
+.admin-profile {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    margin-bottom: 12px;
+}
+
+.admin-profile-avatar {
+    width: 38px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    flex: 0 0 38px;
+    overflow: hidden;
+    border-radius: 50%;
+    background: rgba(255,255,255,.12);
+    color: #fff;
+    font-size: 19px;
+}
+
+.admin-profile-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.admin-profile-details {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.admin-profile-details strong {
+    overflow: hidden;
+    color: #fff;
+    font-size: 13px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.admin-profile-label {
+    color: rgba(255,255,255,.55);
+    font-size: 11px;
 }
 
 .logout-link {

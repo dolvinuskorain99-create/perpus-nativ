@@ -1,4 +1,12 @@
 <?php
+
+
+
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+// ... kode koneksi atau query lainnya ...
+
 // =====================================================
 // SISTEM INFORMASI PERPUSTAKAAN USTJ
 // HALAMAN: MANAJEMEN DATA ANGGOTA & PERSETUJUAN
