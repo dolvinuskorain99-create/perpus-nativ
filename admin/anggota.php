@@ -259,6 +259,34 @@ $nomor_akhir = min($offset + $batas, $total_data);
             color: #94a3b8;
             text-align: center;
         }
+        .card-anggota-content {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .card-anggota-details {
+            flex: 1;
+            min-width: 0;
+        }
+        .card-anggota-photo,
+        .card-anggota-photo-placeholder {
+            width: 76px;
+            height: 94px;
+            flex: 0 0 76px;
+            border: 2px solid rgba(255, 255, 255, 0.35);
+            border-radius: 8px;
+        }
+        .card-anggota-photo {
+            object-fit: cover;
+        }
+        .card-anggota-photo-placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.1);
+            color: #cbd5e1;
+            font-size: 32px;
+        }
         .card-anggota-val {
             flex: 1;
             color: #ffffff;
@@ -351,6 +379,12 @@ $nomor_akhir = min($offset + $batas, $total_data);
                     <tbody>
                         <?php if (mysqli_num_rows($query_data) > 0): ?>
                             <?php $no = $offset + 1; while ($row = mysqli_fetch_assoc($query_data)): ?>
+                                <?php
+                                    $foto_anggota = basename($row['foto'] ?? '');
+                                    $ekstensi_foto = strtolower(pathinfo($foto_anggota, PATHINFO_EXTENSION));
+                                    $foto_tersedia = in_array($ekstensi_foto, ['jpg', 'jpeg', 'png'], true)
+                                        && is_file(__DIR__ . '/../assets/img/profil/' . $foto_anggota);
+                                ?>
                                 <tr>
                                     <td class="text-center text-muted"><?= $no++; ?></td>
                                     <td class="fw-semibold"><?= htmlspecialchars($row['nim'] ?? '-'); ?></td>
@@ -374,7 +408,8 @@ $nomor_akhir = min($offset + $batas, $total_data);
                                                     data-bs-toggle="modal" data-bs-target="#modalCetakKartu"
                                                     data-nim="<?= htmlspecialchars($row['nim'] ?? ''); ?>"
                                                     data-username="<?= htmlspecialchars($row['username'] ?? ''); ?>"
-                                                    data-email="<?= htmlspecialchars($row['email'] ?? ''); ?>">
+                                                    data-email="<?= htmlspecialchars($row['email'] ?? ''); ?>"
+                                                    data-foto="<?= $foto_tersedia ? htmlspecialchars($foto_anggota, ENT_QUOTES, 'UTF-8') : ''; ?>">
                                                 <i class="bi bi-card-heading"></i>
                                             </button>
                                             <button type="button" class="btn btn-warning text-white btn-sm" title="Edit"
@@ -522,6 +557,7 @@ $nomor_akhir = min($offset + $batas, $total_data);
                     </div>
                     
                     <div class="card-anggota-content">
+                        <div class="card-anggota-details">
                         <div class="card-anggota-row">
                             <div class="card-anggota-label">No. Anggota / NIM</div>
                             <div class="card-anggota-sep">:</div>
@@ -541,6 +577,11 @@ $nomor_akhir = min($offset + $batas, $total_data);
                             <div class="card-anggota-label">Masa Berlaku</div>
                             <div class="card-anggota-sep">:</div>
                             <div class="card-anggota-val" style="color: #4ade80;">Selama Aktif Kuliah</div>
+                        </div>
+                        </div>
+                        <img id="card-foto" class="card-anggota-photo d-none" alt="Foto anggota">
+                        <div id="card-foto-placeholder" class="card-anggota-photo-placeholder" aria-label="Foto anggota belum tersedia">
+                            <i class="bi bi-person-fill"></i>
                         </div>
                     </div>
 
@@ -589,6 +630,25 @@ $nomor_akhir = min($offset + $batas, $total_data);
             document.getElementById('card-nim').textContent = button.getAttribute('data-nim');
             document.getElementById('card-username').textContent = button.getAttribute('data-username');
             document.getElementById('card-email').textContent = button.getAttribute('data-email');
+
+            const foto = button.getAttribute('data-foto');
+            const fotoElement = document.getElementById('card-foto');
+            const placeholderFoto = document.getElementById('card-foto-placeholder');
+            fotoElement.onerror = function () {
+                this.onerror = null;
+                this.classList.add('d-none');
+                placeholderFoto.classList.remove('d-none');
+            };
+
+            if (foto) {
+                fotoElement.src = '../assets/img/profil/' + encodeURIComponent(foto);
+                fotoElement.classList.remove('d-none');
+                placeholderFoto.classList.add('d-none');
+            } else {
+                fotoElement.removeAttribute('src');
+                fotoElement.classList.add('d-none');
+                placeholderFoto.classList.remove('d-none');
+            }
         });
     }
 </script>
